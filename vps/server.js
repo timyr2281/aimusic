@@ -25,7 +25,8 @@ if (!BOT_TOKEN || !ADMIN_ID) {
 }
 
 /* ================= DB ================= */
-const db = new Database(path.join(__dirname, 'data.db'));
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+const db = new Database(path.join(DATA_DIR, 'data.db'));
 db.pragma('journal_mode = WAL');
 db.exec(fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8'));
 try { db.exec('ALTER TABLE withdrawals ADD COLUMN network TEXT'); } catch {} // миграция для старых БД
