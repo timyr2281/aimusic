@@ -12,3 +12,12 @@
     "express": "^4.19.2"
   }
 }
+{
+  "name": "yourmusic-server",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "server.js",
+  "engines": { "node": ">=20" },
+  "scripts": { "start": "node server.js" },
+  ...
+}
