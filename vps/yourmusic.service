@@ -1,0 +1,13 @@
+[Unit]
+Description=Your Ai Music (bot + API + frontend)
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/yourmusic
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target

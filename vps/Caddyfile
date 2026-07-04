@@ -1,0 +1,6 @@
+# Замените yourdomain.com на ваш домен (DNS A-запись должна указывать на IP VPS).
+# Caddy сам получит и будет продлевать SSL-сертификат Let's Encrypt.
+
+yourdomain.com {
+    reverse_proxy 127.0.0.1:3000
+}

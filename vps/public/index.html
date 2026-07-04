@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Your Ai Music</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+/* ============================================================
+   DESIGN TOKENS — dark TMA theme
+============================================================ */
+:root {
+  --bg:      #0b0f16;
+  --bg2:     #0e131c;
+  --card:    #141a25;
+  --card2:   #1a2130;
+  --border:  #222b3a;
+  --border2: #2b3648;
+  --text:    #e9edf3;
+  --muted:   #8a94a6;
+  --muted2:  #5b6675;
+  --barbg:   rgba(14,19,28,.92);
+  --seg-active: #323d52;
+  --seg-active-tx: #ffffff;
+
+  --accent:  #4da3ff;
+  --accent2: #2f6fed;
+  --accent-dim: rgba(77,163,255,.12);
+  --accent-brd: rgba(77,163,255,.45);
+  --accent-sh: rgba(47,111,237,.5);
+
+  --green:   #2fd475;
+  --green-dim: rgba(47,212,117,.10);
+  --green-brd: rgba(47,212,117,.35);
+  --amber:   #f5b544;
+  --amber-dim: rgba(245,181,68,.10);
+  --amber-brd: rgba(245,181,68,.4);
+  --violet:  #8f7bff;
+  --violet-dim: rgba(143,123,255,.10);
+  --violet-brd: rgba(143,123,255,.4);
+  --r: 14px;
+}
+body.light {
+  --bg:      #eef2f8;
+  --bg2:     #f4f7fb;
+  --card:    #ffffff;
+  --card2:   #eef2f8;
+  --border:  #dfe6f0;
+  --border2: #c9d4e3;
+  --text:    #1b2431;
+  --muted:   #5d6a7d;
+  --muted2:  #97a3b6;
+  --barbg:   rgba(255,255,255,.92);
+  --seg-active: #ffffff;
+  --seg-active-tx: #1b2431;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-font-smoothing:antialiased; }
+html, body { background:var(--bg); color:var(--text); overscroll-behavior:none; }
+body {
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,sans-serif;
+  font-size:15px; line-height:1.45; user-select:none; -webkit-user-select:none;
+  transition:background .25s, color .25s;
+}
+button { font:inherit; color:inherit; background:none; border:none; cursor:pointer; }
+textarea, input {
+  font:inherit; color:var(--text); font-size:16px;
+  background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+  width:100%; padding:12px 14px; outline:none; transition:border-color .15s;
+  -webkit-user-select:text; user-select:text;
+}
+textarea:focus, input:focus { border-color:var(--accent-brd); }
+textarea { resize:none; }
+::placeholder { color:var(--muted2); }
+.hidden { display:none !important; }
+.app { max-width:430px; margin:0 auto; padding-bottom:150px; }
+
+/* ============================================================
+   TOP BAR
+============================================================ */
+.topbar {
+  position:sticky; top:0; z-index:40;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px 10px;
+  background:var(--barbg); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.brand { display:flex; align-items:center; gap:9px; font-weight:800; font-size:16px; }
+.brand-logo {
+  width:28px; height:28px; border-radius:8px; flex:none;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex; align-items:center; justify-content:center;
+}
+.brand-logo svg { width:15px; height:15px; fill:#fff; }
+.brand small { display:block; font-size:11px; font-weight:500; color:var(--muted); line-height:1.2; }
+
+.lang { display:flex; background:var(--card2); border:1px solid var(--border); border-radius:10px; padding:2px; }
+.lang button { padding:4px 10px; border-radius:8px; font-size:12px; font-weight:700; color:var(--muted); transition:all .15s; }
+.lang button.active { background:var(--seg-active); color:var(--seg-active-tx); }
+
+/* ============================================================
+   GENERIC
+============================================================ */
+.page { padding:14px 16px 0; }
+.micro {
+  font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--muted2); margin:20px 2px 8px;
+}
+.card { background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:14px; }
+.label { font-size:12.5px; font-weight:600; color:var(--muted); margin-bottom:8px; }
+
+/* Compact balance row */
+.balance-row {
+  display:flex; align-items:center; gap:10px;
+  background:var(--card); border:1px solid var(--border); border-radius:12px;
+  padding:10px 14px; margin-top:12px;
+}
+.balance-row .ic {
+  width:30px; height:30px; border-radius:8px; flex:none;
+  background:var(--accent-dim); color:var(--accent);
+  display:flex; align-items:center; justify-content:center;
+}
+.balance-row .ic svg { width:16px; height:16px; fill:currentColor; }
+.balance-row .cap { font-size:13px; font-weight:600; color:var(--muted); }
+.balance-row .val { font-size:19px; font-weight:800; color:var(--accent); }
+.balance-row .plus {
+  width:26px; height:26px; border-radius:8px; flex:none; margin-left:auto;
+  background:var(--accent-dim); color:var(--accent); font-size:16px; font-weight:800;
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* ============================================================
+   CHIPS / SEGMENTED / TABS
+============================================================ */
+.chips { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.chip {
+  background:var(--bg2); border:1px solid var(--border); border-radius:11px;
+  padding:10px 4px; text-align:center; font-size:13px; font-weight:600; color:var(--muted);
+  transition:all .15s;
+}
+.chip:active { transform:scale(.95); }
+.chip.active { background:var(--accent-dim); border-color:var(--accent-brd); color:var(--accent); }
+.chip .em { display:block; font-size:17px; margin-bottom:2px; filter:saturate(.85); }
+
+.segmented { display:flex; background:var(--bg2); border:1px solid var(--border); border-radius:11px; padding:3px; gap:2px; }
+.segmented button { flex:1; padding:9px 2px; border-radius:8px; font-size:12.5px; font-weight:700; color:var(--muted); transition:all .15s; }
+.segmented button.active { background:var(--seg-active); color:var(--seg-active-tx); }
+
+.tabs { display:flex; border-bottom:1px solid var(--border); margin:-4px -14px 14px; padding:0 14px; }
+.tabs button {
+  flex:1; padding:11px 4px 12px; font-size:14px; font-weight:700; color:var(--muted);
+  border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s;
+}
+.tabs button.active { color:var(--text); border-color:var(--accent); }
+
+.ai-hint {
+  display:flex; gap:8px; align-items:center;
+  background:var(--green-dim); border:1px solid var(--green-brd); border-radius:10px;
+  color:var(--green); font-size:12.5px; font-weight:600; padding:9px 12px; margin-bottom:10px;
+}
+.link-btn { color:var(--accent); font-size:13px; font-weight:700; margin-top:8px; display:inline-flex; gap:6px; align-items:center; }
+.link-btn:active { opacity:.6; }
+
+/* ============================================================
+   BUTTONS
+============================================================ */
+.btn {
+  width:100%; border-radius:12px; padding:14px; font-size:15px; font-weight:800;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  transition:transform .12s, opacity .15s;
+}
+.btn:active { transform:scale(.98); }
+.btn:disabled { opacity:.5; }
+.btn-primary { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; box-shadow:0 6px 22px -6px var(--accent-sh); }
+.btn-outline { background:transparent; border:1px solid var(--border2); color:var(--text); }
+.btn-ghost  { background:var(--card2); color:var(--text); }
+.btn.sm { padding:10px; font-size:13.5px; border-radius:10px; }
+
+.cta-wrap {
+  position:fixed; left:0; right:0; bottom:calc(62px + env(safe-area-inset-bottom)); z-index:30;
+  padding:14px 16px 10px;
+  background:linear-gradient(180deg,transparent, var(--bg) 55%);
+}
+.cta-wrap .btn { max-width:398px; margin:0 auto; }
+
+/* ============================================================
+   SPINNER / SKELETON / PROGRESS
+============================================================ */
+.spinner {
+  width:20px; height:20px; border-radius:50%;
+  border:2.5px solid rgba(255,255,255,.25); border-top-color:#fff;
+  animation:spin .7s linear infinite;
+}
+.spinner.blue { border-color:var(--accent-dim); border-top-color:var(--accent); }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+.skeleton { position:relative; overflow:hidden; background:var(--card2); border-radius:7px; height:13px; }
+.skeleton::after {
+  content:''; position:absolute; inset:0; transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);
+  animation:shimmer 1.3s infinite;
+}
+@keyframes shimmer { 100% { transform:translateX(100%); } }
+
+.progress { background:var(--card2); border-radius:99px; height:6px; overflow:hidden; }
+.progress i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .7s ease; }
+
+.gen-wrap { text-align:center; padding:44px 0 30px; }
+.gen-disc { position:relative; width:96px; height:96px; margin:0 auto 22px; }
+.gen-disc .ring { position:absolute; inset:0; border-radius:50%; border:1.5px solid var(--accent-brd); animation:pulse 2s ease-out infinite; }
+.gen-disc .ring:nth-child(2) { animation-delay:1s; }
+@keyframes pulse { 0%{transform:scale(1);opacity:.7} 100%{transform:scale(1.65);opacity:0} }
+.gen-disc .disc {
+  position:absolute; inset:0; border-radius:50%;
+  background:radial-gradient(circle at 50% 50%, var(--accent2) 0 18%, #10151f 19% 55%, #1a2130 56% 100%);
+  border:1px solid var(--border2);
+  animation:spin 2.4s linear infinite;
+}
+.gen-status { font-size:13px; font-weight:700; color:var(--accent); margin-top:10px; min-height:19px; }
+
+/* Player */
+.player {
+  display:flex; align-items:center; gap:12px;
+  background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:12px;
+}
+.play-btn {
+  width:46px; height:46px; border-radius:50%; flex:none;
+  background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; font-size:15px;
+  display:flex; align-items:center; justify-content:center;
+}
+.play-btn:active { transform:scale(.92); }
+.eq { display:flex; align-items:flex-end; height:24px; flex:none; }
+.eq span { width:3px; margin:0 1.5px; border-radius:2px; background:var(--accent); animation:eq 1s ease-in-out infinite; }
+.eq span:nth-child(2){animation-delay:.15s} .eq span:nth-child(3){animation-delay:.3s}
+.eq span:nth-child(4){animation-delay:.45s} .eq span:nth-child(5){animation-delay:.6s}
+@keyframes eq { 0%,100%{height:6px} 50%{height:20px} }
+.eq.paused span { animation-play-state:paused; height:6px; }
+
+/* ============================================================
+   SHOP
+============================================================ */
+.packs { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.pack {
+  background:var(--card); border:1px solid var(--border); border-radius:var(--r);
+  padding:16px 12px 12px; text-align:center; position:relative; transition:transform .12s;
+}
+.pack:active { transform:scale(.96); }
+.pack .num { font-size:30px; font-weight:800; letter-spacing:-.02em; line-height:1; }
+.pack .cap { font-size:11.5px; color:var(--muted); margin-top:3px; }
+.pack .nm  { font-size:12px; font-weight:700; color:var(--muted); margin-bottom:8px; }
+.pack .price {
+  margin-top:11px; padding-top:10px; border-top:1px solid var(--border);
+  display:flex; justify-content:space-between; font-size:12.5px; font-weight:700;
+}
+.pack .price .st { color:var(--amber); }
+.pack .price .ua { color:var(--muted); }
+.pack.c-blue  { border-color:var(--accent-brd); } .pack.c-blue .num { color:var(--accent); }
+.pack.c-green { border-color:var(--green-brd); } .pack.c-green .num { color:var(--green); }
+.pack.c-violet{ border-color:var(--violet-brd);} .pack.c-violet .num{ color:var(--violet); }
+.pack.c-amber { border-color:var(--amber-brd); } .pack.c-amber .num { color:var(--amber); }
+.badge {
+  position:absolute; top:-9px; left:50%; transform:translateX(-50%);
+  font-size:10px; font-weight:800; letter-spacing:.05em; white-space:nowrap;
+  padding:3px 10px; border-radius:99px; color:#0b0f16;
+}
+.badge.b-blue { background:var(--accent); } .badge.b-amber { background:var(--amber); }
+
+.note {
+  display:flex; gap:10px; align-items:center; margin-top:14px;
+  background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:12px 14px;
+  font-size:12px; color:var(--muted); line-height:1.45;
+}
+
+/* ============================================================
+   PROFILE
+============================================================ */
+.user-card { display:flex; align-items:center; gap:12px; margin-top:14px; }
+.avatar {
+  width:52px; height:52px; border-radius:50%; flex:none;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff; font-size:21px; font-weight:800;
+  display:flex; align-items:center; justify-content:center;
+}
+.avatar { overflow:hidden; }
+.avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.user-card b { font-size:16.5px; font-weight:800; display:block; }
+.user-card span { font-size:12.5px; color:var(--muted); }
+
+.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.stat {
+  background:var(--card); border:1px solid var(--border); border-radius:12px;
+  padding:12px; text-align:center;
+}
+.stat .v { font-size:21px; font-weight:800; line-height:1.15; }
+.stat .k { font-size:11px; color:var(--muted); margin-top:2px; }
+.stat.s-green { border-color:var(--green-brd); } .stat.s-green .v { color:var(--green); }
+.stat.s-blue  { border-color:var(--accent-brd); } .stat.s-blue .v { color:var(--accent); }
+
+.money-card { background:var(--card); border:1px solid var(--green-brd); border-radius:var(--r); padding:14px; }
+.money-card .sum { font-size:24px; font-weight:800; color:var(--green); }
+.money-card .cap { font-size:12px; color:var(--muted); margin-bottom:12px; }
+.money-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+
+.ref-link {
+  display:flex; align-items:center; gap:8px;
+  background:var(--bg2); border:1px dashed var(--border2); border-radius:11px;
+  padding:10px 12px; margin:10px 0;
+}
+.ref-link code {
+  flex:1; min-width:0; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:11.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  user-select:text; -webkit-user-select:text;
+}
+.icon-btn {
+  width:32px; height:32px; border-radius:9px; flex:none;
+  background:var(--accent-dim); color:var(--accent);
+  display:flex; align-items:center; justify-content:center; font-size:14px;
+}
+.icon-btn:active { transform:scale(.9); }
+.ref-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
+
+/* Songs */
+.song {
+  display:flex; align-items:center; gap:11px;
+  background:var(--card); border:1px solid var(--border); border-radius:12px;
+  padding:11px 12px; margin-bottom:8px;
+}
+.song .cover {
+  width:40px; height:40px; border-radius:10px; flex:none; font-size:17px;
+  background:var(--accent-dim); display:flex; align-items:center; justify-content:center;
+}
+.song .inf { flex:1; min-width:0; }
+.song .inf b { display:block; font-size:13.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.song .inf span { font-size:11.5px; color:var(--muted); }
+.song .dl {
+  width:34px; height:34px; border-radius:9px; flex:none;
+  background:var(--green-dim); color:var(--green);
+  display:flex; align-items:center; justify-content:center;
+}
+.song .dl:active { transform:scale(.9); }
+.song .dl svg { width:16px; height:16px; fill:currentColor; }
+.empty { text-align:center; color:var(--muted2); font-size:13px; padding:18px 10px; }
+
+/* Settings */
+.set-row { display:flex; align-items:center; justify-content:space-between; padding:4px 0; }
+.set-row + .set-row { margin-top:12px; }
+.set-row .t { font-size:14px; font-weight:600; }
+.dots { display:flex; gap:9px; }
+.dot { width:26px; height:26px; border-radius:50%; border:2px solid transparent; transition:all .15s; }
+.dot.active { border-color:var(--text); transform:scale(1.15); }
+.ava-opts { display:flex; flex-wrap:wrap; gap:8px; }
+.ava-opt {
+  width:42px; height:42px; border-radius:50%; overflow:hidden;
+  background:var(--bg2); border:2px solid var(--border); font-size:19px;
+  display:flex; align-items:center; justify-content:center; transition:all .15s;
+}
+.ava-opt.active { border-color:var(--accent); transform:scale(1.08); }
+.ava-opt img { width:100%; height:100%; object-fit:cover; }
+
+/* ============================================================
+   BOTTOM NAV
+============================================================ */
+.nav {
+  position:fixed; left:0; right:0; bottom:0; z-index:40;
+  display:flex; justify-content:space-around;
+  background:var(--barbg); backdrop-filter:blur(14px);
+  border-top:1px solid var(--border);
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+}
+.nav button {
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  font-size:10.5px; font-weight:700; color:var(--muted2); flex:1; max-width:110px;
+  transition:color .15s;
+}
+.nav button svg { width:21px; height:21px; fill:currentColor; transition:transform .15s; }
+.nav button.active { color:var(--accent); }
+.nav button.active svg { transform:translateY(-1px) scale(1.08); }
+
+/* ============================================================
+   MODAL / TOAST
+============================================================ */
+.modal { position:fixed; inset:0; z-index:50; }
+.backdrop { position:absolute; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(3px); animation:fade .2s; }
+.sheet {
+  position:absolute; left:0; right:0; bottom:0; max-width:430px; margin:0 auto;
+  background:var(--card); border:1px solid var(--border); border-bottom:none;
+  border-radius:20px 20px 0 0; padding:14px 16px calc(20px + env(safe-area-inset-bottom));
+  animation:up .28s cubic-bezier(.2,.9,.3,1.05);
+}
+.grab { width:38px; height:4px; border-radius:99px; background:var(--border2); margin:0 auto 14px; }
+@keyframes up { from{transform:translateY(60px);opacity:0} to{transform:none;opacity:1} }
+@keyframes fade { from{opacity:0} to{opacity:1} }
+.fade-in { animation:fadeUp .25s ease; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+.m-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
+.m-head h3 { font-size:17px; font-weight:800; }
+.m-head p  { font-size:12.5px; color:var(--muted); margin-top:2px; }
+.m-close { width:30px; height:30px; border-radius:50%; background:var(--card2); color:var(--muted); font-size:13px; font-weight:800; flex:none; }
+
+.method {
+  width:100%; display:flex; align-items:center; gap:12px; text-align:left;
+  background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+  padding:11px 12px; margin-bottom:9px; transition:all .13s;
+}
+.method:active { transform:scale(.98); border-color:var(--accent-brd); }
+.m-ic { width:38px; height:38px; border-radius:10px; flex:none; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.method b { display:block; font-size:14.5px; font-weight:700; }
+.method span { display:block; font-size:12px; color:var(--muted); }
+.method .grow { flex:1; min-width:0; }
+.chev { color:var(--muted2); font-size:17px; font-weight:700; }
+
+.addr {
+  background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
+  padding:12px; word-break:break-all; margin-bottom:10px; user-select:text; -webkit-user-select:text;
+}
+.center-state { padding:34px 10px 26px; text-align:center; }
+.ok-circle {
+  width:58px; height:58px; border-radius:50%; margin:0 auto 14px;
+  background:var(--green-dim); border:1px solid var(--green-brd);
+  color:var(--green); font-size:24px; font-weight:800;
+  display:flex; align-items:center; justify-content:center;
+}
+
+.toast {
+  position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:60;
+  background:var(--card2); border:1px solid var(--border2); color:var(--text);
+  font-size:13.5px; font-weight:600; padding:10px 16px; border-radius:12px;
+  max-width:90vw; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,.35);
+  animation:toastIn .25s ease;
+}
+@keyframes toastIn { from{transform:translate(-50%,-14px);opacity:0} to{transform:translate(-50%,0);opacity:1} }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ TOP BAR ============ -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
+      </div>
+      <div>
+        <span data-i18n="app_name">Your Ai Music</span>
+        <small data-i18n="app_tag"></small>
+      </div>
+    </div>
+    <div class="lang" id="langSwitch">
+      <button data-lang="uk">UA</button>
+      <button data-lang="ru">RU</button>
+      <button data-lang="en">EN</button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: CONSTRUCTOR ============ -->
+  <div id="screen-create" class="page">
+
+    <!-- Compact balance -->
+    <button class="balance-row" style="width:100%" onclick="showScreen('shop')">
+      <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L9.5 22 19 9.5h-6.5L13 2z"/></svg></span>
+      <span class="cap" data-i18n="bal_cap"></span>
+      <span class="val" id="balanceVal">3</span>
+      <span class="plus">+</span>
+    </button>
+    <p id="freeHint" class="hidden" style="font-size:12px;color:var(--green);font-weight:600;margin:8px 2px 0" data-i18n="free_hint"></p>
+
+    <p class="micro" data-i18n="sec_style"></p>
+    <div class="card">
+      <p class="label" data-i18n="genre_label"></p>
+      <div class="chips" id="genreGrid"></div>
+      <p class="label" style="margin-top:14px" data-i18n="vocal_label"></p>
+      <div class="segmented" id="vocalSeg">
+        <button data-vocal="male" data-i18n="vocal_male"></button>
+        <button data-vocal="female" data-i18n="vocal_female"></button>
+        <button data-vocal="inst" data-i18n="vocal_inst"></button>
+      </div>
+    </div>
+
+    <p class="micro" data-i18n="sec_lyrics"></p>
+    <div class="card" id="lyricsCard" style="transition:opacity .2s">
+      <div class="tabs" id="lyricsTabs">
+        <button data-tab="self" data-i18n="tab_self"></button>
+        <button data-tab="ai" data-i18n="tab_ai"></button>
+      </div>
+
+      <div id="tab-self">
+        <textarea id="lyricsSelf" rows="7" data-i18n-ph="lyrics_ph"></textarea>
+      </div>
+
+      <div id="tab-ai" class="hidden">
+        <p class="label" data-i18n="ai_label"></p>
+        <textarea id="aiTopic" rows="2" data-i18n-ph="ai_topic_ph" style="margin-bottom:10px"></textarea>
+        <button class="btn btn-primary" id="aiBtn" onclick="generateLyrics()">
+          <span id="aiBtnIcon">✨</span><span id="aiBtnText"></span>
+        </button>
+
+        <div id="aiSkeleton" class="hidden" style="margin-top:14px">
+          <div class="skeleton" style="width:40%;margin-bottom:9px"></div>
+          <div class="skeleton" style="width:100%;margin-bottom:9px"></div>
+          <div class="skeleton" style="width:92%;margin-bottom:9px"></div>
+          <div class="skeleton" style="width:80%;margin-bottom:9px"></div>
+          <div class="skeleton" style="width:100%;margin-bottom:9px"></div>
+          <div class="skeleton" style="width:60%"></div>
+        </div>
+
+        <div id="aiResultWrap" class="hidden fade-in" style="margin-top:14px">
+          <div class="ai-hint"><span>✓</span><span data-i18n="ai_edit_hint"></span></div>
+          <textarea id="lyricsAi" rows="10"></textarea>
+          <button class="link-btn" onclick="generateLyrics()">↻ <span data-i18n="ai_retry"></span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: GENERATING ============ -->
+  <div id="screen-generating" class="page hidden">
+    <div class="card gen-wrap fade-in" style="margin-top:16px">
+      <div class="gen-disc">
+        <div class="ring"></div><div class="ring"></div>
+        <div class="disc"></div>
+      </div>
+      <h2 style="font-size:18px;font-weight:800" data-i18n="gen_title"></h2>
+      <p style="font-size:13px;color:var(--muted);margin:6px 0 22px" data-i18n="gen_sub"></p>
+      <div class="progress"><i id="genProgress" style="width:5%"></i></div>
+      <div class="gen-status" id="genStatus"></div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: RESULT ============ -->
+  <div id="screen-result" class="page hidden">
+    <div class="card fade-in" style="margin-top:16px;text-align:center;padding:22px 16px 16px">
+      <div style="font-size:36px;margin-bottom:4px">🎉</div>
+      <h2 style="font-size:18px;font-weight:800" data-i18n="res_title"></h2>
+      <p style="font-size:12.5px;color:var(--muted);margin:4px 0 16px" id="resMeta"></p>
+
+      <div class="player" style="margin-bottom:14px">
+        <button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
+        <div style="flex:1;min-width:0;text-align:left">
+          <div style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="resTrackName"></div>
+          <div class="progress" style="margin-top:8px;height:4px"><i id="playProgress" style="width:0%"></i></div>
+        </div>
+        <div class="eq paused" id="eqBars"><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+
+      <button class="btn btn-primary" style="margin-bottom:9px" onclick="downloadSong()">⬇ <span data-i18n="res_download"></span></button>
+      <button class="btn btn-outline" onclick="resetToCreate()"><span data-i18n="res_new"></span></button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: SHOP ============ -->
+  <div id="screen-shop" class="page hidden">
+    <div class="balance-row">
+      <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L9.5 22 19 9.5h-6.5L13 2z"/></svg></span>
+      <span class="cap" data-i18n="bal_cap"></span>
+      <span class="val" id="balanceVal2">3</span>
+    </div>
+
+    <p class="micro" data-i18n="shop_sec"></p>
+    <div class="packs" id="packGrid"></div>
+
+    <div class="note">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--green)" style="flex:none"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3zm-1.2 13.6-3-3 1.4-1.4 1.6 1.6 4-4 1.4 1.4-5.4 5.4z"/></svg>
+      <span data-i18n="shop_secure"></span>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: PROFILE ============ -->
+  <div id="screen-profile" class="page hidden">
+
+    <div class="user-card">
+      <div class="avatar" id="avatar">A</div>
+      <div style="flex:1;min-width:0">
+        <b id="userName">User</b>
+        <span id="userTag">@user</span>
+      </div>
+      <button class="icon-btn" onclick="openProfileEdit()">✎</button>
+    </div>
+    <button id="adminBtn" class="btn btn-ghost sm hidden" style="margin-top:12px" onclick="openAdmin()">🛠 Админ-панель</button>
+
+    <p class="micro" data-i18n="prof_stats"></p>
+    <div class="stat-grid">
+      <div class="stat s-blue"><div class="v" id="statGens">3</div><div class="k" data-i18n="bal_cap"></div></div>
+      <div class="stat s-green"><div class="v" id="statSongs">0</div><div class="k" data-i18n="stat_songs"></div></div>
+    </div>
+
+    <!-- Balance -->
+    <p class="micro" data-i18n="bal_sec"></p>
+    <div class="money-card">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px">
+        <div class="sum" id="moneyVal">0 грн</div>
+        <div id="starsVal" class="hidden" style="font-size:16px;font-weight:800;color:var(--amber)">⭐ 0</div>
+      </div>
+      <div class="money-btns">
+        <button class="btn btn-primary sm" onclick="openDeposit()">➕ <span data-i18n="dep_btn"></span></button>
+        <button class="btn btn-ghost sm" onclick="openWithdraw()">💸 <span data-i18n="btn_withdraw"></span></button>
+      </div>
+    </div>
+
+    <!-- Referral program -->
+    <p class="micro" data-i18n="ref_sec"></p>
+    <div class="card">
+      <p style="font-size:12.5px;color:var(--muted);line-height:1.5" data-i18n="ref_desc"></p>
+      <div class="ref-link">
+        <code id="refLink">t.me/AiMusicBot?start=ref</code>
+        <button class="icon-btn" onclick="copyRef()" title="copy">⧉</button>
+        <button class="icon-btn" onclick="shareRef()" title="share">📤</button>
+      </div>
+      <div class="ref-stats">
+        <div class="stat"><div class="v" id="refInvited">0</div><div class="k" data-i18n="ref_invited"></div></div>
+        <div class="stat"><div class="v" id="refBuyers">0</div><div class="k" data-i18n="ref_buyers"></div></div>
+        <div class="stat s-green"><div class="v" id="refEarned">0₴</div><div class="k" data-i18n="ref_earned"></div></div>
+      </div>
+    </div>
+
+    <!-- My songs -->
+    <p class="micro" data-i18n="songs_sec"></p>
+    <div id="songsList"></div>
+
+    <!-- Settings -->
+    <p class="micro" data-i18n="settings_sec"></p>
+    <div class="card">
+      <div class="set-row">
+        <span class="t" data-i18n="theme_label"></span>
+        <div class="segmented" style="width:170px" id="themeSeg">
+          <button data-theme="dark" data-i18n="theme_dark"></button>
+          <button data-theme="light" data-i18n="theme_light"></button>
+        </div>
+      </div>
+      <div class="set-row">
+        <span class="t" data-i18n="accent_label"></span>
+        <div class="dots" id="accentDots"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: ADMIN (только для ADMIN_ID) ============ -->
+  <div id="screen-admin" class="page hidden">
+    <div style="display:flex;align-items:center;gap:10px;margin-top:14px">
+      <button class="icon-btn" onclick="showScreen('profile')">←</button>
+      <h2 style="font-size:18px;font-weight:800">🛠 Админ-панель</h2>
+    </div>
+
+    <p class="micro">Статистика</p>
+    <div class="stat-grid" id="admStats"></div>
+
+    <p class="micro">Поиск пользователя</p>
+    <div class="card">
+      <div style="display:flex;gap:8px">
+        <input id="admQ" placeholder="id или @username" style="flex:1">
+        <button class="btn btn-primary sm" style="width:auto;padding:10px 16px" onclick="admSearch()">🔍</button>
+      </div>
+      <div id="admUser"></div>
+    </div>
+
+    <p class="micro">Заявки на вывод</p>
+    <div id="admWd"></div>
+
+    <p class="micro">История выводов</p>
+    <div class="card" id="admWdHist" style="padding:6px 14px"></div>
+
+    <p class="micro">Топ по рефералам</p>
+    <div class="card" id="admTopRefs" style="padding:6px 14px"></div>
+
+    <p class="micro">Топ по тратам</p>
+    <div class="card" id="admTopSpend" style="padding:6px 14px"></div>
+
+    <p class="micro">Новые пользователи</p>
+    <div class="card" id="admRecent" style="padding:6px 14px"></div>
+  </div>
+
+  <!-- ============ CTA ============ -->
+  <div class="cta-wrap" id="ctaWrap">
+    <button class="btn btn-primary" id="createBtn" onclick="createSong()">
+      <span id="createBtnText"></span>
+    </button>
+  </div>
+
+  <!-- ============ BOTTOM NAV ============ -->
+  <div class="nav">
+    <button id="nav-create" onclick="showScreen('create')">
+      <svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
+      <span data-i18n="nav_create"></span>
+    </button>
+    <button id="nav-shop" onclick="showScreen('shop')">
+      <svg viewBox="0 0 24 24"><path d="M7 4h10l3 5-8 11L4 9l3-5zm1.2 2L6.2 9h11.6l-2-3H8.2zM12 17.3 8 11h8l-4 6.3z"/></svg>
+      <span data-i18n="nav_shop"></span>
+    </button>
+    <button id="nav-profile" onclick="showScreen('profile')">
+      <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3.3 0-8 1.7-8 5v2h16v-2c0-3.3-4.7-5-8-5z"/></svg>
+      <span data-i18n="nav_profile"></span>
+    </button>
+  </div>
+
+  <!-- ============ MODAL ============ -->
+  <div id="payModal" class="modal hidden">
+    <div class="backdrop" onclick="closePay()"></div>
+    <div class="sheet">
+      <div class="grab"></div>
+      <div id="payBody"></div>
+    </div>
+  </div>
+
+  <div id="toastBox" class="toast hidden"></div>
+</div>
+
+<script>
+'use strict';
+
+/* ================= TELEGRAM ================= */
+const tg = window.Telegram?.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+const haptic = (s='light') => tg?.HapticFeedback?.impactOccurred?.(s);
+const tgUser = tg?.initDataUnsafe?.user || null;
+
+/* ================= SERVER API =================
+   Фронтенд раздаётся тем же сервером, поэтому пути относительные.
+   Если сервер недоступен (открыли файл локально) — работает демо-режим. */
+let SERVER = false;
+let serverRefLink = null;
+
+async function api(path, body = {}) {
+  try {
+    const r = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: tg?.initData || '', ...body }),
+    });
+    return await r.json();
+  } catch (e) { return null; }
+}
+
+function applyServer(d) {
+  if (!d?.ok) return false;
+  state.credits = d.credits;
+  state.money = d.money;
+  state.stars = d.stars;
+  state.songs = d.songs || [];
+  if (d.ref) state.refStats = d.ref;
+  if (d.refLink) serverRefLink = d.refLink;
+  if (typeof d.isAdmin === 'boolean') state.isAdmin = d.isAdmin;
+  $('adminBtn').classList.toggle('hidden', !isAdmin());
+  updateDynamic();
+  renderSongs();
+  return true;
+}
+
+async function serverSync() {
+  const d = await api('/api/me');
+  if (d?.ok) {
+    SERVER = true;
+    applyServer(d);
+    $('refLink').textContent = getRefLink().replace('https://', '');
+  }
+}
+
+/* ================= I18N ================= */
+const I18N = {
+  ru: {
+    app_name:'Your Ai Music', app_tag:'конструктор песен',
+    bal_cap:'осталось генераций',
+    nav_create:'Студия', nav_shop:'Магазин', nav_profile:'Профиль',
+    sec_style:'Стиль', sec_lyrics:'Текст песни', shop_sec:'Пакеты генераций',
+    genre_label:'Жанр', vocal_label:'Вокал',
+    vocal_male:'Мужской', vocal_female:'Женский', vocal_inst:'Без слов',
+    genres:{ pop:'Поп', rock:'Рок', rap:'Рэп', phonk:'Фонк', chanson:'Шансон', jazz:'Джаз', electro:'Электро', metal:'Метал', folk:'Фолк' },
+    tab_self:'Написать самому', tab_ai:'Помощь ИИ ✨',
+    lyrics_ph:'Вставьте свои стихи или текст здесь...',
+    ai_label:'Опишите тему песни',
+    ai_topic_ph:'Например: День рождения друга Андрея, который любит рыбалку',
+    ai_btn:'Набросать текст', ai_generating:'ИИ пишет...',
+    ai_edit_hint:'Текст готов — подправьте строчки, если нужно',
+    ai_retry:'Сгенерировать заново',
+    ai_empty_topic:'Сначала опишите тему песни',
+    create_btn:'Создать песню',
+    err_no_lyrics:'Добавьте текст или выберите «Без слов»',
+    no_credits:'Недостаточно кредитов — пополните баланс',
+    gen_title:'Создаём вашу песню',
+    gen_sub:'Обычно занимает 1–2 минуты. Не закрывайте приложение.',
+    gen_s1:'Анализируем текст...', gen_s2:'Подбираем мелодию...', gen_s3:'Записываем вокал...', gen_s4:'Сводим трек...',
+    res_title:'Песня готова!',
+    res_download:'Скачать', res_new:'Создать ещё одну',
+    res_track:'Моя песня',
+    song_downloaded:'Файл скачан (демо: текст песни)',
+    shop_secure:'Безопасная оплата: Telegram Stars, карты (MonoPay / WayForPay), криптовалюта.',
+    pkg_mini:'Мини', pkg_std:'Стандарт', pkg_half:'Половина', pkg_maxi:'Макси',
+    popular:'ПОПУЛЯРНЫЙ', best_price:'ВЫГОДНО',
+    pay_title:'Способ оплаты', pay_for:'Пакет',
+    pay_stars:'Telegram Stars', pay_stars_sub:'Мгновенно, внутри Telegram',
+    pay_card:'Оплата картой', pay_card_sub:'Apple Pay · Google Pay · Visa/MC',
+    pay_crypto:'Криптовалюта', pay_crypto_sub:'Solana · TON · USDT',
+    pay_card_title:'Выберите способ',
+    pay_card_manual:'Ввести данные карты',
+    pay_redirect:'Перенаправляем на защищённую страницу оплаты...',
+    pay_crypto_title:'Выберите сеть',
+    pay_address:'Адрес для оплаты',
+    pay_copy:'Скопировать адрес', pay_copied:'Скопировано',
+    pay_i_paid:'Я оплатил', pay_checking:'Проверяем транзакцию...',
+    pay_success:'Оплата прошла!', pay_success_sub:'Кредиты зачислены на баланс',
+    back:'Назад',
+    prof_stats:'Статистика',
+    stat_songs:'создано песен',
+    bal_sec:'Баланс',
+    btn_withdraw:'Вывести', dep_btn:'Депозит',
+    dep_sub:'Пополнение баланса',
+    dep_amount:'Сумма', dep_amount_ph:'Введите сумму...',
+    dep_in_stars:'Сумма в ⭐', dep_in_uah:'Сумма в грн',
+    dep_err:'Введите сумму', dep_done:'Баланс пополнен!',
+    pay_balance:'С баланса',
+    not_enough_balance:'Недостаточно средств на балансе',
+    ref_sec:'Реферальная программа',
+    ref_desc:'Приглашайте друзей по своей ссылке: +1 генерация за каждого, кто купит любой пакет, плюс 30% от всех их покупок — на ваш баланс.',
+    ref_invited:'приглашено', ref_buyers:'купили', ref_earned:'заработано',
+    ref_copied:'Ссылка скопирована',
+    songs_sec:'Мои песни',
+    songs_empty:'Пока нет песен — создайте первую! 🎵',
+    songs_all:'Показать все', songs_less:'Свернуть',
+    settings_sec:'Настройки',
+    theme_label:'Тема', theme_dark:'Тёмная', theme_light:'Светлая',
+    accent_label:'Цвет акцента',
+    wd_title:'Вывод средств',
+    wd_desc:'Минимальная сумма — 50 грн. Средства поступят в течение 1 дня.',
+    wd_method_card:'На карту', wd_method_card_sub:'Visa / Mastercard',
+    wd_method_crypto:'На криптокошелёк', wd_method_crypto_sub:'Только USDT · 5 сетей',
+    wd_network:'Выберите сеть', wd_usdt_note:'Вывод в криптовалюте — только в USDT',
+    wd_details_card:'Номер карты', wd_details_crypto:'Адрес кошелька USDT',
+    wd_ph_card:'0000 0000 0000 0000', wd_ph_crypto:'Вставьте адрес...',
+    wd_submit:'Отправить заявку', wd_details_err:'Укажите реквизиты',
+    wd_done:'Заявка на вывод создана!',
+    wd_done_sub:'Средства поступят в течение 1 дня',
+    wd_processing:'Создаём заявку...',
+    not_enough_money:'Минимум для вывода — 50 грн',
+    pe_title:'Настройки профиля',
+    pe_name:'Имя', pe_name_ph:'Введите имя...',
+    pe_avatar:'Аватар', pe_upload:'Загрузить фото',
+    pe_save:'Сохранить', pe_saved:'Профиль обновлён',
+    free_hint:'🎁 Первая песня — бесплатно!',
+    gen_word:['генерация','генерации','генераций'],
+  },
+  uk: {
+    app_name:'Your Ai Music', app_tag:'конструктор пісень',
+    bal_cap:'залишилось генерацій',
+    nav_create:'Студія', nav_shop:'Магазин', nav_profile:'Профіль',
+    sec_style:'Стиль', sec_lyrics:'Текст пісні', shop_sec:'Пакети генерацій',
+    genre_label:'Жанр', vocal_label:'Вокал',
+    vocal_male:'Чоловічий', vocal_female:'Жіночий', vocal_inst:'Без слів',
+    genres:{ pop:'Поп', rock:'Рок', rap:'Реп', phonk:'Фонк', chanson:'Шансон', jazz:'Джаз', electro:'Електро', metal:'Метал', folk:'Фолк' },
+    tab_self:'Написати самому', tab_ai:'Допомога ШІ ✨',
+    lyrics_ph:'Вставте свої вірші або текст сюди...',
+    ai_label:'Опишіть тему пісні',
+    ai_topic_ph:'Наприклад: День народження друга Андрія, який любить рибалку',
+    ai_btn:'Накидати текст', ai_generating:'ШІ пише...',
+    ai_edit_hint:'Текст готовий — підправте рядки, якщо потрібно',
+    ai_retry:'Згенерувати заново',
+    ai_empty_topic:'Спершу опишіть тему пісні',
+    create_btn:'Створити пісню',
+    err_no_lyrics:'Додайте текст або оберіть «Без слів»',
+    no_credits:'Недостатньо кредитів — поповніть баланс',
+    gen_title:'Створюємо вашу пісню',
+    gen_sub:'Зазвичай займає 1–2 хвилини. Не закривайте застосунок.',
+    gen_s1:'Аналізуємо текст...', gen_s2:'Підбираємо мелодію...', gen_s3:'Записуємо вокал...', gen_s4:'Зводимо трек...',
+    res_title:'Пісня готова!',
+    res_download:'Завантажити', res_new:'Створити ще одну',
+    res_track:'Моя пісня',
+    song_downloaded:'Файл завантажено (демо: текст пісні)',
+    shop_secure:'Безпечна оплата: Telegram Stars, картки (MonoPay / WayForPay), криптовалюта.',
+    pkg_mini:'Міні', pkg_std:'Стандарт', pkg_half:'Половина', pkg_maxi:'Максі',
+    popular:'ПОПУЛЯРНИЙ', best_price:'ВИГІДНО',
+    pay_title:'Спосіб оплати', pay_for:'Пакет',
+    pay_stars:'Telegram Stars', pay_stars_sub:'Миттєво, всередині Telegram',
+    pay_card:'Оплата карткою', pay_card_sub:'Apple Pay · Google Pay · Visa/MC',
+    pay_crypto:'Криптовалюта', pay_crypto_sub:'Solana · TON · USDT',
+    pay_card_title:'Оберіть спосіб',
+    pay_card_manual:'Ввести дані картки',
+    pay_redirect:'Перенаправляємо на захищену сторінку оплати...',
+    pay_crypto_title:'Оберіть мережу',
+    pay_address:'Адреса для оплати',
+    pay_copy:'Скопіювати адресу', pay_copied:'Скопійовано',
+    pay_i_paid:'Я сплатив', pay_checking:'Перевіряємо транзакцію...',
+    pay_success:'Оплата пройшла!', pay_success_sub:'Кредити зараховано на баланс',
+    back:'Назад',
+    prof_stats:'Статистика',
+    stat_songs:'створено пісень',
+    bal_sec:'Баланс',
+    btn_withdraw:'Вивести', dep_btn:'Депозит',
+    dep_sub:'Поповнення балансу',
+    dep_amount:'Сума', dep_amount_ph:'Введіть суму...',
+    dep_in_stars:'Сума в ⭐', dep_in_uah:'Сума в грн',
+    dep_err:'Введіть суму', dep_done:'Баланс поповнено!',
+    pay_balance:'З балансу',
+    not_enough_balance:'Недостатньо коштів на балансі',
+    ref_sec:'Реферальна програма',
+    ref_desc:'Запрошуйте друзів за своїм посиланням: +1 генерація за кожного, хто купить будь-який пакет, плюс 30% від усіх їхніх покупок — на ваш баланс.',
+    ref_invited:'запрошено', ref_buyers:'купили', ref_earned:'зароблено',
+    ref_copied:'Посилання скопійовано',
+    songs_sec:'Мої пісні',
+    songs_empty:'Поки немає пісень — створіть першу! 🎵',
+    songs_all:'Показати всі', songs_less:'Згорнути',
+    settings_sec:'Налаштування',
+    theme_label:'Тема', theme_dark:'Темна', theme_light:'Світла',
+    accent_label:'Колір акценту',
+    wd_title:'Виведення коштів',
+    wd_desc:'Мінімальна сума — 50 грн. Кошти надійдуть протягом 1 дня.',
+    wd_method_card:'На картку', wd_method_card_sub:'Visa / Mastercard',
+    wd_method_crypto:'На криптогаманець', wd_method_crypto_sub:'Лише USDT · 5 мереж',
+    wd_network:'Оберіть мережу', wd_usdt_note:'Виведення в криптовалюті — лише в USDT',
+    wd_details_card:'Номер картки', wd_details_crypto:'Адреса гаманця USDT',
+    wd_ph_card:'0000 0000 0000 0000', wd_ph_crypto:'Вставте адресу...',
+    wd_submit:'Надіслати заявку', wd_details_err:'Вкажіть реквізити',
+    wd_done:'Заявку на виведення створено!',
+    wd_done_sub:'Кошти надійдуть протягом 1 дня',
+    wd_processing:'Створюємо заявку...',
+    not_enough_money:'Мінімум для виведення — 50 грн',
+    pe_title:'Налаштування профілю',
+    pe_name:'Ім’я', pe_name_ph:'Введіть ім’я...',
+    pe_avatar:'Аватар', pe_upload:'Завантажити фото',
+    pe_save:'Зберегти', pe_saved:'Профіль оновлено',
+    free_hint:'🎁 Перша пісня — безкоштовно!',
+    gen_word:['генерація','генерації','генерацій'],
+  },
+  en: {
+    app_name:'Your Ai Music', app_tag:'song constructor',
+    bal_cap:'generations left',
+    nav_create:'Studio', nav_shop:'Store', nav_profile:'Profile',
+    sec_style:'Style', sec_lyrics:'Song lyrics', shop_sec:'Generation packs',
+    genre_label:'Genre', vocal_label:'Vocals',
+    vocal_male:'Male', vocal_female:'Female', vocal_inst:'No vocals',
+    genres:{ pop:'Pop', rock:'Rock', rap:'Rap', phonk:'Phonk', chanson:'Chanson', jazz:'Jazz', electro:'Electro', metal:'Metal', folk:'Folk' },
+    tab_self:'Write myself', tab_ai:'AI helper ✨',
+    lyrics_ph:'Paste your poem or lyrics here...',
+    ai_label:'Describe the song topic',
+    ai_topic_ph:'E.g.: Birthday of my friend Andrew who loves fishing',
+    ai_btn:'Draft lyrics', ai_generating:'AI is writing...',
+    ai_edit_hint:'Done — feel free to edit any lines',
+    ai_retry:'Regenerate',
+    ai_empty_topic:'Describe the song topic first',
+    create_btn:'Create song',
+    err_no_lyrics:'Add lyrics or choose "No vocals"',
+    no_credits:'Not enough credits — top up your balance',
+    gen_title:'Creating your song',
+    gen_sub:'Usually takes 1–2 minutes. Please keep the app open.',
+    gen_s1:'Analyzing lyrics...', gen_s2:'Composing melody...', gen_s3:'Recording vocals...', gen_s4:'Mixing the track...',
+    res_title:'Your song is ready!',
+    res_download:'Download', res_new:'Create another one',
+    res_track:'My song',
+    song_downloaded:'File downloaded (demo: lyrics)',
+    shop_secure:'Secure payments: Telegram Stars, cards (MonoPay / WayForPay), crypto.',
+    pkg_mini:'Mini', pkg_std:'Standard', pkg_half:'Half', pkg_maxi:'Maxi',
+    popular:'POPULAR', best_price:'BEST VALUE',
+    pay_title:'Payment method', pay_for:'Package',
+    pay_stars:'Telegram Stars', pay_stars_sub:'Instant, inside Telegram',
+    pay_card:'Pay by card', pay_card_sub:'Apple Pay · Google Pay · Visa/MC',
+    pay_crypto:'Cryptocurrency', pay_crypto_sub:'Solana · TON · USDT',
+    pay_card_title:'Choose an option',
+    pay_card_manual:'Enter card details',
+    pay_redirect:'Redirecting to a secure payment page...',
+    pay_crypto_title:'Choose network',
+    pay_address:'Payment address',
+    pay_copy:'Copy address', pay_copied:'Copied',
+    pay_i_paid:'I have paid', pay_checking:'Verifying transaction...',
+    pay_success:'Payment complete!', pay_success_sub:'Credits added to your balance',
+    back:'Back',
+    prof_stats:'Statistics',
+    stat_songs:'songs created',
+    bal_sec:'Balance',
+    btn_withdraw:'Withdraw', dep_btn:'Deposit',
+    dep_sub:'Top up your balance',
+    dep_amount:'Amount', dep_amount_ph:'Enter amount...',
+    dep_in_stars:'Amount in ⭐', dep_in_uah:'Amount in UAH',
+    dep_err:'Enter an amount', dep_done:'Balance topped up!',
+    pay_balance:'From balance',
+    not_enough_balance:'Not enough funds on balance',
+    ref_sec:'Referral program',
+    ref_desc:'Invite friends with your link: +1 generation for each one who buys any pack, plus 30% of all their purchases goes to your balance.',
+    ref_invited:'invited', ref_buyers:'bought', ref_earned:'earned',
+    ref_copied:'Link copied',
+    songs_sec:'My songs',
+    songs_empty:'No songs yet — create your first one! 🎵',
+    songs_all:'Show all', songs_less:'Show less',
+    settings_sec:'Settings',
+    theme_label:'Theme', theme_dark:'Dark', theme_light:'Light',
+    accent_label:'Accent color',
+    wd_title:'Withdraw funds',
+    wd_desc:'Minimum amount — 50 UAH. Funds arrive within 1 day.',
+    wd_method_card:'To card', wd_method_card_sub:'Visa / Mastercard',
+    wd_method_crypto:'To crypto wallet', wd_method_crypto_sub:'USDT only · 5 networks',
+    wd_network:'Choose network', wd_usdt_note:'Crypto withdrawals are in USDT only',
+    wd_details_card:'Card number', wd_details_crypto:'USDT wallet address',
+    wd_ph_card:'0000 0000 0000 0000', wd_ph_crypto:'Paste address...',
+    wd_submit:'Submit request', wd_details_err:'Enter payment details',
+    wd_done:'Withdrawal request created!',
+    wd_done_sub:'Funds arrive within 1 day',
+    wd_processing:'Creating request...',
+    not_enough_money:'Minimum withdrawal — 50 UAH',
+    pe_title:'Profile settings',
+    pe_name:'Name', pe_name_ph:'Enter name...',
+    pe_avatar:'Avatar', pe_upload:'Upload photo',
+    pe_save:'Save', pe_saved:'Profile updated',
+    free_hint:'🎁 Your first song is free!',
+    gen_word:['generation','generations','generations'],
+  }
+};
+
+/* ================= STATE ================= */
+const DEFAULTS = {
+  lang: (tgUser?.language_code || 'ru').startsWith('uk') ? 'uk' : 'ru',
+  credits: 1,                      // every new user gets 1 free song
+  money: 30,                       // demo referral earnings, UAH
+  stars: 0,                        // Telegram Stars balance
+  songs: [],                       // {name, genre, vocal, date, lyrics}
+  refStats: { invited: 2, buyers: 1, earned: 30 },
+  theme: 'dark',
+  accent: 'blue',
+  profile: { name: '', avatar: null },  // avatar: {type:'emoji'|'img', value}
+};
+let state = { ...DEFAULTS, genre:'pop', vocal:'male', lyricsTab:'self', aiGenerating:false, trackGenerating:false, playing:false };
+
+// persist a subset between sessions
+function save() {
+  try {
+    localStorage.setItem('ams', JSON.stringify({
+      lang:state.lang, credits:state.credits, money:state.money, stars:state.stars,
+      songs:state.songs, refStats:state.refStats, theme:state.theme, accent:state.accent,
+      profile:state.profile
+    }));
+  } catch(e) {}
+}
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem('ams'));
+    if (s) Object.assign(state, s);
+  } catch(e) {}
+}
+
+const GENRES = ['pop','rock','rap','phonk','chanson','jazz','electro','metal','folk'];
+const GENRE_ICONS = { pop:'🎤', rock:'🎸', rap:'🎧', phonk:'😈', chanson:'🍷', jazz:'🎷', electro:'🎛️', metal:'🤘', folk:'🪕' };
+const PACKS = [
+  { id:'mini', key:'pkg_mini', gens:3,  stars:50,  uah:50,  cls:'' },
+  { id:'std',  key:'pkg_std',  gens:10, stars:100, uah:100, cls:'c-blue',  badge:'popular',    bcls:'b-blue' },
+  { id:'half', key:'pkg_half', gens:20, stars:200, uah:200, cls:'c-violet' },
+  { id:'maxi', key:'pkg_maxi', gens:50, stars:400, uah:400, cls:'c-amber', badge:'best_price', bcls:'b-amber' },
+];
+const ACCENTS = {
+  blue:   ['#4da3ff','#2f6fed'],
+  violet: ['#8f7bff','#6a5bf0'],
+  green:  ['#2fd475','#1a9e57'],
+  amber:  ['#f5b544','#e08f16'],
+  pink:   ['#ff6fa5','#f04b86'],
+};
+const WD_MIN = 50;        // min withdrawal, UAH
+const SONGS_PREVIEW = 5;  // songs shown before "show all"
+
+const $ = id => document.getElementById(id);
+const t = k => I18N[state.lang][k] ?? k;
+
+function plural(n) {
+  const w = t('gen_word');
+  if (state.lang === 'en') return n === 1 ? w[0] : w[1];
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return w[0];
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return w[1];
+  return w[2];
+}
+
+/* ================= THEME / ACCENT ================= */
+function hexRgba(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
+}
+function applyAccent() {
+  const [a, b] = ACCENTS[state.accent] || ACCENTS.blue;
+  const r = document.documentElement.style;
+  r.setProperty('--accent', a);
+  r.setProperty('--accent2', b);
+  r.setProperty('--accent-dim', hexRgba(a, .12));
+  r.setProperty('--accent-brd', hexRgba(a, .45));
+  r.setProperty('--accent-sh', hexRgba(b, .5));
+  renderAccentDots();
+}
+function applyTheme() {
+  document.body.classList.toggle('light', state.theme === 'light');
+  document.querySelectorAll('#themeSeg button').forEach(b => b.classList.toggle('active', b.dataset.theme === state.theme));
+  const bg = state.theme === 'light' ? '#eef2f8' : '#0b0f16';
+  tg?.setHeaderColor?.(bg); tg?.setBackgroundColor?.(bg);
+}
+function renderAccentDots() {
+  $('accentDots').innerHTML = Object.entries(ACCENTS).map(([k, [a, b]]) => `
+    <button class="dot ${state.accent === k ? 'active' : ''}" style="background:linear-gradient(135deg,${a},${b})" onclick="setAccent('${k}')"></button>
+  `).join('');
+}
+function setAccent(k) { haptic(); state.accent = k; applyAccent(); save(); }
+
+/* ================= REFERRAL ================= */
+const userId = tgUser?.id || 10000001;
+const localRefLink = `https://t.me/AiMusicBot?start=ref_${userId}`;
+function getRefLink() { return serverRefLink || localRefLink; }
+
+function copyRef() {
+  haptic();
+  navigator.clipboard?.writeText(getRefLink());
+  toast(t('ref_copied'));
+}
+function shareRef() {
+  haptic();
+  const url = `https://t.me/share/url?url=${encodeURIComponent(getRefLink())}`;
+  tg?.openTelegramLink ? tg.openTelegramLink(url) : window.open(url, '_blank');
+}
+
+/* ================= RENDER ================= */
+function applyLang() {
+  document.documentElement.lang = state.lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.dataset.i18n));
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => el.placeholder = t(el.dataset.i18nPh));
+  document.querySelectorAll('#langSwitch button').forEach(b => b.classList.toggle('active', b.dataset.lang === state.lang));
+  renderGenres();
+  renderPacks();
+  renderSongs();
+  updateDynamic();
+}
+
+function updateDynamic() {
+  $('balanceVal').textContent = state.credits;
+  $('balanceVal2').textContent = state.credits;
+  $('statGens').textContent = state.credits;
+  $('statSongs').textContent = state.songs.length;
+  $('moneyVal').textContent = state.money + ' грн';
+  // stars shown on the right only when user actually has stars
+  $('starsVal').textContent = '⭐ ' + state.stars;
+  $('starsVal').classList.toggle('hidden', state.stars <= 0);
+  // free-song hint disappears once the first song is created
+  $('freeHint').classList.toggle('hidden', !(state.songs.length === 0 && state.credits > 0));
+  $('refInvited').textContent = state.refStats.invited;
+  $('refBuyers').textContent = state.refStats.buyers;
+  $('refEarned').textContent = state.refStats.earned + '₴';
+  $('createBtnText').textContent = state.trackGenerating ? t('gen_title') : t('create_btn');
+  $('aiBtnText').textContent = state.aiGenerating ? t('ai_generating') : t('ai_btn');
+  $('resTrackName').textContent = t('res_track') + ' · ' + t('genres')[state.genre];
+  $('resMeta').textContent = t('genres')[state.genre] + ' · ' + t('vocal_' + state.vocal);
+}
+
+function renderGenres() {
+  $('genreGrid').innerHTML = GENRES.map(g => `
+    <button class="chip ${state.genre === g ? 'active' : ''}" onclick="setGenre('${g}')">
+      <span class="em">${GENRE_ICONS[g]}</span>${t('genres')[g]}
+    </button>`).join('');
+}
+
+function renderPacks() {
+  $('packGrid').innerHTML = PACKS.map(p => `
+    <button class="pack ${p.cls}" onclick="openPay('${p.id}')">
+      ${p.badge ? `<span class="badge ${p.bcls}">${t(p.badge)}</span>` : ''}
+      <div class="nm">${t(p.key)}</div>
+      <div class="num">${p.gens}</div>
+      <div class="cap">${plural(p.gens)}</div>
+      <div class="price"><span class="ua">${p.uah} грн</span><span class="st">⭐️ ${p.stars}</span></div>
+    </button>`).join('');
+}
+
+let songsExpanded = false;
+function toggleSongs() { haptic(); songsExpanded = !songsExpanded; renderSongs(); }
+
+function renderSongs() {
+  if (!state.songs.length) {
+    $('songsList').innerHTML = `<div class="card empty">${t('songs_empty')}</div>`;
+    return;
+  }
+  const visible = songsExpanded ? state.songs : state.songs.slice(0, SONGS_PREVIEW);
+  let html = visible.map((s, i) => `
+    <div class="song">
+      <div class="cover">${GENRE_ICONS[s.genre] || '🎵'}</div>
+      <div class="inf">
+        <b>${s.name}</b>
+        <span>${t('genres')[s.genre]} · ${t('vocal_' + s.vocal)} · ${s.date}</span>
+      </div>
+      <button class="dl" onclick="downloadSongAt(${i})">
+        <svg viewBox="0 0 24 24"><path d="M12 3v10.6l-3.3-3.3-1.4 1.4L12 17.4l4.7-4.7-1.4-1.4-3.3 3.3V3h-2zM5 19v2h14v-2H5z"/></svg>
+      </button>
+    </div>`).join('');
+  if (state.songs.length > SONGS_PREVIEW) {
+    html += `<button class="btn btn-ghost sm" onclick="toggleSongs()">
+      ${songsExpanded ? '↑ ' + t('songs_less') : '↓ ' + t('songs_all') + ' (' + state.songs.length + ')'}
+    </button>`;
+  }
+  $('songsList').innerHTML = html;
+}
+
+/* ================= NAVIGATION ================= */
+function showScreen(name) {
+  haptic();
+  ['create','generating','result','shop','profile','admin'].forEach(s => $('screen-' + s).classList.toggle('hidden', s !== name));
+  $('nav-create').classList.toggle('active', ['create','generating','result'].includes(name));
+  $('nav-shop').classList.toggle('active', name === 'shop');
+  $('nav-profile').classList.toggle('active', name === 'profile' || name === 'admin');
+  $('ctaWrap').classList.toggle('hidden', name !== 'create');
+  window.scrollTo(0, 0);
+}
+
+function setGenre(g) { haptic(); state.genre = g; renderGenres(); updateDynamic(); }
+
+function setVocal(v) {
+  haptic();
+  state.vocal = v;
+  document.querySelectorAll('#vocalSeg button').forEach(b => b.classList.toggle('active', b.dataset.vocal === v));
+  $('lyricsCard').style.opacity = v === 'inst' ? '.4' : '1';
+  $('lyricsCard').style.pointerEvents = v === 'inst' ? 'none' : 'auto';
+}
+
+function setTab(tab) {
+  haptic();
+  state.lyricsTab = tab;
+  document.querySelectorAll('#lyricsTabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  $('tab-self').classList.toggle('hidden', tab !== 'self');
+  $('tab-ai').classList.toggle('hidden', tab !== 'ai');
+}
+
+/* ================= AI LYRICS (simulated) ================= */
+const MOCK_LYRICS = {
+  ru: topic => `Куплет 1:
+Сегодня день особенный, поверь —
+${topic ? 'Про это: ' + topic : 'Открыта в лето новая дверь'}.
+Улыбки, смех и тёплые слова,
+От счастья закружилась голова.
+
+Припев:
+Пой со мной, не молчи,
+Это наша песня звучит в ночи!
+Пусть мечты сбываются скорей,
+Рядом — самый лучший из друзей!
+
+Куплет 2:
+Пусть годы пролетают, как вода,
+Мы вместе — и это навсегда.
+Подарим миру песню и любовь,
+И этот припев споём мы вновь!`,
+  uk: topic => `Куплет 1:
+Сьогодні день особливий, повір —
+${topic ? 'Про це: ' + topic : 'Відкриті в літо тисячі дверей'}.
+Усмішки, сміх і теплії слова,
+Від щастя обертом іде голова.
+
+Приспів:
+Співай зі мною, не мовчи,
+Це наша пісня лунає вночі!
+Хай мрії здійснюються швидше,
+Поруч — друг, найкращий і найближчий!
+
+Куплет 2:
+Хай роки пролітають, як вода,
+Ми разом — і це назавжди.
+Подаруємо світу пісню і любов,
+І цей приспів заспіваємо знов!`,
+  en: topic => `Verse 1:
+Today's a special day, believe me now —
+${topic ? 'It\'s all about: ' + topic : 'We\'ll make it magic, we know how'}.
+With smiles and laughter, warmth in every word,
+The happiest song you've ever heard.
+
+Chorus:
+Sing with me, don't hold back,
+This is our song on the midnight track!
+May every dream come true so fast,
+With friends like you, the good times last!
+
+Verse 2:
+Let years fly by like rivers to the sea,
+Together we are all we need to be.
+We'll give the world this melody and love,
+And sing this chorus to the stars above!`
+};
+
+function generateLyrics() {
+  if (state.aiGenerating) return;
+  const topic = $('aiTopic').value.trim();
+  if (!topic) { toast(t('ai_empty_topic')); return; }
+  haptic('medium');
+
+  state.aiGenerating = true;
+  $('aiBtn').disabled = true;
+  $('aiBtnIcon').innerHTML = '<div class="spinner"></div>';
+  $('aiResultWrap').classList.add('hidden');
+  $('aiSkeleton').classList.remove('hidden');
+  updateDynamic();
+
+  setTimeout(() => {
+    state.aiGenerating = false;
+    $('aiBtn').disabled = false;
+    $('aiBtnIcon').textContent = '✨';
+    $('aiSkeleton').classList.add('hidden');
+    $('aiResultWrap').classList.remove('hidden');
+    $('lyricsAi').value = MOCK_LYRICS[state.lang](topic);   // editable result
+    updateDynamic();
+    haptic('medium');
+  }, 2200);
+}
+
+/* ================= SONG CREATION (simulated) ================= */
+function getLyrics() {
+  return state.lyricsTab === 'ai' ? $('lyricsAi').value.trim() : $('lyricsSelf').value.trim();
+}
+
+async function createSong() {
+  if (state.trackGenerating) return;
+  if (state.credits < 1) { toast(t('no_credits')); showScreen('shop'); return; }
+  if (state.vocal !== 'inst' && !getLyrics()) { toast(t('err_no_lyrics')); return; }
+  haptic('heavy');
+
+  const topic = $('aiTopic').value.trim();
+  const name = (state.lyricsTab === 'ai' && topic)
+    ? topic.slice(0, 28) + (topic.length > 28 ? '…' : '')
+    : `${t('res_track')} #${state.songs.length + 1}`;
+  const lyrics = getLyrics();
+
+  if (SERVER) {
+    // кредит списывает сервер; он же сохраняет песню
+    const d = await api('/api/song', { name, genre: state.genre, vocal: state.vocal, lyrics });
+    if (!d?.ok) {
+      if (d?.error === 'no_credits') { toast(t('no_credits')); showScreen('shop'); }
+      else toast('Server error');
+      return;
+    }
+    applyServer(d);
+  } else {
+    state.credits--;
+    state.songs.unshift({
+      name, genre: state.genre, vocal: state.vocal,
+      date: new Date().toLocaleDateString(), lyrics,
+    });
+    save();
+  }
+
+  state.trackGenerating = true;
+  updateDynamic();
+  showScreen('generating');
+
+  const steps = [
+    { p:25, s:'gen_s1', d:1200 },
+    { p:55, s:'gen_s2', d:2600 },
+    { p:80, s:'gen_s3', d:4200 },
+    { p:97, s:'gen_s4', d:5800 },
+  ];
+  $('genProgress').style.width = '5%';
+  $('genStatus').textContent = t('gen_s1');
+  steps.forEach(st => setTimeout(() => {
+    if (!state.trackGenerating) return;
+    $('genProgress').style.width = st.p + '%';
+    $('genStatus').textContent = t(st.s);
+  }, st.d));
+
+  setTimeout(() => {
+    state.trackGenerating = false;
+    updateDynamic();
+    renderSongs();
+    showScreen('result');
+    haptic('heavy');
+  }, 7200);
+}
+
+function resetToCreate() { stopPlay(); showScreen('create'); }
+
+/* ---- download (demo: lyrics as .txt; real backend would serve mp3) ---- */
+function downloadSongAt(i) {
+  haptic();
+  const s = state.songs[i];
+  if (!s) return;
+  const blob = new Blob([s.name + '\n\n' + (s.lyrics || '')], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = s.name.replace(/[^\wа-яіїєґА-ЯІЇЄҐ -]/g, '') + '.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast(t('song_downloaded'));
+}
+function downloadSong() { downloadSongAt(0); }
+
+/* ---- mock player ---- */
+let playTimer = null, playPos = 0;
+function togglePlay() { haptic(); state.playing ? stopPlay() : startPlay(); }
+function startPlay() {
+  state.playing = true;
+  $('playBtn').textContent = '⏸';
+  $('eqBars').classList.remove('paused');
+  playTimer = setInterval(() => {
+    playPos = (playPos + 1) % 101;
+    $('playProgress').style.width = playPos + '%';
+  }, 180);
+}
+function stopPlay() {
+  state.playing = false;
+  $('playBtn').textContent = '▶';
+  $('eqBars').classList.add('paused');
+  clearInterval(playTimer);
+}
+
+/* ================= PAYMENTS ================= */
+let currentPack = null;
+
+function openPay(id) {
+  haptic();
+  currentPack = PACKS.find(p => p.id === id);
+  renderPayMethods();
+  $('payModal').classList.remove('hidden');
+}
+function closePay() { $('payModal').classList.add('hidden'); }
+
+function payHeader(title, sub) {
+  return `
+    <div class="m-head">
+      <div>
+        <h3>${title}</h3>
+        <p>${sub}</p>
+      </div>
+      <button class="m-close" onclick="closePay()">✕</button>
+    </div>`;
+}
+function packHeader() {
+  return payHeader(t('pay_title'), `${t('pay_for')} «${t(currentPack.key)}» · ${currentPack.gens} ${plural(currentPack.gens)}`);
+}
+
+function methodBtn(onclick, icon, iconStyle, title, sub) {
+  return `
+    <button class="method" onclick="${onclick}">
+      <span class="m-ic" style="${iconStyle}">${icon}</span>
+      <span class="grow"><b>${title}</b><span>${sub}</span></span>
+      <span class="chev">›</span>
+    </button>`;
+}
+
+function renderPayMethods() {
+  const balSub = state.money + ' грн' + (state.stars > 0 ? ' · ⭐ ' + state.stars : '');
+  $('payBody').innerHTML = packHeader()
+    + methodBtn('payBalance()', '👛', 'background:var(--green-dim)', t('pay_balance'), balSub)
+    + methodBtn('payStars()', '⭐️', 'background:var(--amber-dim)', t('pay_stars'), `${t('pay_stars_sub')} · ${currentPack.stars} ⭐️`)
+    + methodBtn('renderPayCard()', '💳', 'background:var(--accent-dim)', t('pay_card'), `${t('pay_card_sub')} · ${currentPack.uah} грн`)
+    + methodBtn('renderPayCrypto()', '🪙', 'background:var(--violet-dim)', t('pay_crypto'), t('pay_crypto_sub'));
+}
+
+async function payStars() {
+  haptic('medium');
+  if (SERVER && tg?.openInvoice) {
+    // реальный платёж Telegram Stars
+    const d = await api('/api/invoice', { pack: currentPack.id });
+    if (!d?.ok) { toast('Server error'); return; }
+    closePay();
+    tg.openInvoice(d.link, status => {
+      if (status === 'paid') setTimeout(serverSync, 1500);
+    });
+    return;
+  }
+  showPayLoading(t('pay_redirect'));       // демо-режим
+  setTimeout(paySuccess, 1800);
+}
+
+/* pay for a pack from internal balance (UAH first, then Stars) */
+async function payBalance() {
+  haptic('medium');
+  if (SERVER) {
+    const d = await api('/api/purchase', { pack: currentPack.id, method: 'balance' });
+    if (!d?.ok) { toast(t('not_enough_balance')); return; }
+    applyServer(d);
+    paySuccessScreen();
+    return;
+  }
+  if (state.money >= currentPack.uah) {
+    state.money -= currentPack.uah;
+    paySuccess();
+  } else if (state.stars >= currentPack.stars) {
+    state.stars -= currentPack.stars;
+    paySuccess();
+  } else {
+    toast(t('not_enough_balance'));
+  }
+}
+
+function renderPayCard() {
+  haptic();
+  $('payBody').innerHTML = packHeader() + `
+    <p class="label">${t('pay_card_title')}</p>
+    <button class="btn" style="background:#000;border:1px solid var(--border2);color:#fff;margin-bottom:9px" onclick="cardRedirect()"> Pay</button>
+    <button class="btn" style="background:#fff;color:#111;margin-bottom:9px" onclick="cardRedirect()">G Pay</button>
+    <button class="btn btn-ghost" style="margin-bottom:12px" onclick="cardRedirect()">💳 ${t('pay_card_manual')}</button>
+    <button class="link-btn" style="width:100%;justify-content:center" onclick="renderPayMethods()">← ${t('back')}</button>`;
+}
+function cardRedirect() {
+  haptic('medium');
+  showPayLoading(t('pay_redirect'));
+  if (SERVER) {
+    // TODO: заменить на реальный редирект MonoPay/WayForPay
+    api('/api/purchase', { pack: currentPack.id, method: 'card' }).then(d => {
+      if (d?.ok) { applyServer(d); paySuccessScreen(); }
+      else { toast('Server error'); closePay(); }
+    });
+    return;
+  }
+  setTimeout(paySuccess, 2200);
+}
+
+const CRYPTO = [
+  { id:'sol',  name:'Solana', sym:'SOL',    icon:'◎',  style:'background:var(--green-dim);color:var(--green)', addr:'7xKq...Music9jP2vSol4aBcD' },
+  { id:'ton',  name:'TON',    sym:'TON',    icon:'💠', style:'background:var(--accent-dim)',                   addr:'UQBm...usicTon8kLmN3oPqR5s' },
+  { id:'usdt', name:'USDT',   sym:'TRC-20', icon:'💵', style:'background:var(--green-dim)',                    addr:'TMus...ic7YtRx2WqZ8vB4nK6j' },
+];
+function renderPayCrypto() {
+  haptic();
+  $('payBody').innerHTML = packHeader()
+    + `<p class="label">${t('pay_crypto_title')}</p>`
+    + CRYPTO.map(c => methodBtn(`cryptoAddress('${c.id}')`, c.icon, c.style, c.name, c.sym)).join('')
+    + `<button class="link-btn" style="width:100%;justify-content:center;margin-top:4px" onclick="renderPayMethods()">← ${t('back')}</button>`;
+}
+function cryptoAddress(id) {
+  haptic();
+  const c = CRYPTO.find(x => x.id === id);
+  $('payBody').innerHTML = packHeader() + `
+    <p style="font-weight:800;font-size:15px;margin-bottom:2px">${c.icon} ${c.name} · ${c.sym}</p>
+    <p class="label">${t('pay_address')}</p>
+    <div class="addr">${c.addr}</div>
+    <button class="btn btn-outline" style="margin-bottom:9px" onclick="copyAddr('${c.addr}')">📋 ${t('pay_copy')}</button>
+    <button class="btn btn-primary" style="margin-bottom:12px" onclick="cryptoConfirm()">${t('pay_i_paid')} ✓</button>
+    <button class="link-btn" style="width:100%;justify-content:center" onclick="renderPayCrypto()">← ${t('back')}</button>`;
+}
+function copyAddr(addr) {
+  haptic();
+  navigator.clipboard?.writeText(addr);
+  toast(t('pay_copied'));
+}
+function cryptoConfirm() {
+  haptic('medium');
+  showPayLoading(t('pay_checking'));
+  if (SERVER) {
+    // TODO: заменить на реальную проверку крипто-транзакции
+    api('/api/purchase', { pack: currentPack.id, method: 'crypto' }).then(d => {
+      if (d?.ok) { applyServer(d); paySuccessScreen(); }
+      else { toast('Server error'); closePay(); }
+    });
+    return;
+  }
+  setTimeout(paySuccess, 2500);
+}
+
+function showPayLoading(msg) {
+  $('payBody').innerHTML = `
+    <div class="center-state fade-in">
+      <div class="spinner blue" style="width:32px;height:32px;border-width:3px;margin:0 auto 16px"></div>
+      <p style="font-weight:700;font-size:14px;color:var(--muted)">${msg}</p>
+    </div>`;
+}
+function paySuccess() {          // демо-режим: начисляет локально
+  state.credits += currentPack.gens;
+  save();
+  updateDynamic();
+  paySuccessScreen();
+}
+function paySuccessScreen() {    // только экран успеха (сервер уже всё начислил)
+  haptic('heavy');
+  $('payBody').innerHTML = `
+    <div class="center-state fade-in">
+      <div class="ok-circle">✓</div>
+      <p style="font-weight:800;font-size:17px">${t('pay_success')}</p>
+      <p style="font-size:13px;color:var(--muted);margin:3px 0 4px">${t('pay_success_sub')}</p>
+      <p style="font-weight:800;font-size:15px;color:var(--green);margin-bottom:18px">+${currentPack.gens} ${plural(currentPack.gens)}</p>
+      <button class="btn btn-primary" style="max-width:220px;margin:0 auto" onclick="closePay()">OK</button>
+    </div>`;
+}
+
+/* ================= BALANCE: DEPOSIT ================= */
+function openDeposit() {
+  haptic();
+  $('payBody').innerHTML = payHeader(t('dep_btn'), t('dep_sub')) + `
+    <p class="label">${t('dep_amount')}</p>
+    <input id="depAmount" type="number" min="1" inputmode="numeric" placeholder="${t('dep_amount_ph')}" style="margin-bottom:12px">`
+    + methodBtn("doDeposit('stars')", '⭐️', 'background:var(--amber-dim)', t('pay_stars'), t('dep_in_stars'))
+    + methodBtn("doDeposit('card')", '💳', 'background:var(--accent-dim)', t('pay_card'), `${t('dep_in_uah')} · ${t('pay_card_sub')}`)
+    + methodBtn("doDeposit('crypto')", '🪙', 'background:var(--violet-dim)', t('pay_crypto'), `${t('dep_in_uah')} · ${t('pay_crypto_sub')}`);
+  $('payModal').classList.remove('hidden');
+}
+async function doDeposit(method) {
+  const amount = parseInt($('depAmount').value, 10);
+  if (!amount || amount < 1) { toast(t('dep_err')); return; }
+  haptic('medium');
+
+  if (SERVER) {
+    if (method === 'stars' && tg?.openInvoice) {
+      // реальный инвойс Telegram Stars на произвольную сумму
+      const d = await api('/api/invoice', { depositStars: amount });
+      if (!d?.ok) { toast('Server error'); return; }
+      closePay();
+      tg.openInvoice(d.link, s => { if (s === 'paid') setTimeout(serverSync, 1500); });
+      return;
+    }
+    showPayLoading(method === 'crypto' ? t('pay_checking') : t('pay_redirect'));
+    const d = await api('/api/deposit', { amount, method });   // TODO: реальный платёжный колбэк
+    if (d?.ok) { applyServer(d); depositDoneScreen(amount, method); }
+    else { toast('Server error'); closePay(); }
+    return;
+  }
+
+  showPayLoading(method === 'crypto' ? t('pay_checking') : t('pay_redirect'));
+  setTimeout(() => {
+    if (method === 'stars') state.stars += amount;
+    else state.money += amount;
+    save();
+    updateDynamic();
+    depositDoneScreen(amount, method);
+  }, 2000);
+}
+
+function depositDoneScreen(amount, method) {
+  haptic('heavy');
+  $('payBody').innerHTML = `
+    <div class="center-state fade-in">
+      <div class="ok-circle">✓</div>
+      <p style="font-weight:800;font-size:17px">${t('dep_done')}</p>
+      <p style="font-weight:800;font-size:15px;color:var(--green);margin:4px 0 18px">+${amount} ${method === 'stars' ? '⭐' : 'грн'}</p>
+      <button class="btn btn-primary" style="max-width:220px;margin:0 auto" onclick="closePay()">OK</button>
+    </div>`;
+}
+
+/* ================= BALANCE: WITHDRAW ================= */
+function openWithdraw() {
+  haptic();
+  const ok = state.money >= WD_MIN;
+  $('payBody').innerHTML = payHeader(t('wd_title'), `${t('bal_sec')}: ${state.money} грн`) + `
+    <p style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:12px">${t('wd_desc')}</p>`
+    + methodBtn(ok ? "wdDetailsStep('card')" : "toast(t('not_enough_money'))", '💳', 'background:var(--accent-dim)', t('wd_method_card'), t('wd_method_card_sub'))
+    + methodBtn(ok ? "wdDetailsStep('crypto')" : "toast(t('not_enough_money'))", '🪙', 'background:var(--violet-dim)', t('wd_method_crypto'), t('wd_method_crypto_sub'));
+  $('payModal').classList.remove('hidden');
+}
+
+/* крипта: сначала выбор сети (вывод только в USDT), карта: сразу реквизиты */
+const WD_NETWORKS = ['Arbitrum', 'Solana', 'BEP20', 'TRC20', 'ERC20'];
+
+function wdDetailsStep(method) {
+  if (method === 'crypto') { wdNetworkStep(); return; }
+  wdAddressStep('card', null);
+}
+
+function wdNetworkStep() {
+  haptic();
+  $('payBody').innerHTML = payHeader(t('wd_title'), `${state.money} грн → USDT`) + `
+    <div class="ai-hint" style="margin-bottom:12px;background:var(--amber-dim);border-color:var(--amber-brd);color:var(--amber)">
+      <span>⚠️</span><span>${t('wd_usdt_note')}</span>
+    </div>
+    <p class="label">${t('wd_network')}</p>`
+    + WD_NETWORKS.map(n =>
+        methodBtn(`wdAddressStep('crypto','${n}')`, '🪙', 'background:var(--violet-dim)', n, 'USDT')).join('')
+    + `<button class="link-btn" style="width:100%;justify-content:center;margin-top:4px" onclick="openWithdraw()">← ${t('back')}</button>`;
+}
+
+function wdAddressStep(method, network) {
+  haptic();
+  const isCrypto = method === 'crypto';
+  $('payBody').innerHTML = payHeader(t('wd_title'),
+      `${state.money} грн · ${isCrypto ? 'USDT · ' + network : '💳'}`) + `
+    ${isCrypto ? `<div class="ai-hint" style="margin-bottom:12px;background:var(--amber-dim);border-color:var(--amber-brd);color:var(--amber)">
+      <span>⚠️</span><span>${t('wd_usdt_note')}</span></div>` : ''}
+    <p class="label">${isCrypto ? t('wd_details_crypto') + ' · ' + network : t('wd_details_card')}</p>
+    <input id="wdDetails" placeholder="${isCrypto ? t('wd_ph_crypto') : t('wd_ph_card')}"
+      inputmode="${isCrypto ? 'text' : 'numeric'}" style="margin-bottom:12px">
+    <button class="btn btn-primary" style="margin-bottom:12px" onclick="doWithdraw('${method}','${network || ''}')">
+      💸 ${t('wd_submit')} · ${state.money} грн
+    </button>
+    <button class="link-btn" style="width:100%;justify-content:center" onclick="${isCrypto ? 'wdNetworkStep()' : 'openWithdraw()'}">← ${t('back')}</button>`;
+}
+async function doWithdraw(method, network) {
+  if (state.money < WD_MIN) { toast(t('not_enough_money')); return; }
+  const details = $('wdDetails')?.value.trim() || '';
+  if (details.length < 5) { toast(t('wd_details_err')); return; }
+  haptic('medium');
+  showPayLoading(t('wd_processing'));
+  const amount = state.money;
+
+  if (SERVER) {
+    // сервер сам проверяет баланс и шлёт админу: id, юзернейм, сумма, сеть, реквизиты
+    const d = await api('/api/withdraw', { method, network, details });
+    if (d?.ok) { applyServer(d); wdDoneScreen(amount, method, network); }
+    else { toast(d?.error === 'min' ? t('not_enough_money') : 'Server error'); closePay(); }
+    return;
+  }
+
+  setTimeout(() => {
+    state.money = 0;
+    save();
+    updateDynamic();
+    wdDoneScreen(amount, method, network);
+  }, 2000);
+}
+
+function wdDoneScreen(amount, method, network) {
+  haptic('heavy');
+  $('payBody').innerHTML = `
+    <div class="center-state fade-in">
+      <div class="ok-circle">✓</div>
+      <p style="font-weight:800;font-size:17px">${t('wd_done')}</p>
+      <p style="font-size:13px;color:var(--muted);margin:3px 0 4px">${t('wd_done_sub')}</p>
+      <p style="font-weight:800;font-size:15px;color:var(--green);margin-bottom:18px">${amount} грн ${method === 'crypto' ? '→ USDT · ' + network : ''}</p>
+      <button class="btn btn-primary" style="max-width:220px;margin:0 auto" onclick="closePay()">OK</button>
+    </div>`;
+}
+
+/* ================= PROFILE EDIT ================= */
+const AVA_EMOJIS = ['🎤','🎸','🎧','🎷','🔥','😎','🌟','🐱'];
+let peAvatar = null;
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function openProfileEdit() {
+  haptic();
+  peAvatar = state.profile.avatar;
+  $('payBody').innerHTML = payHeader(t('pe_title'), '') + `
+    <p class="label">${t('pe_name')}</p>
+    <input id="peName" maxlength="30" value="${escapeHtml(state.profile.name || uNameDefault)}" placeholder="${t('pe_name_ph')}" style="margin-bottom:14px">
+    <p class="label">${t('pe_avatar')}</p>
+    <div class="ava-opts" id="avaOpts"></div>
+    <label class="btn btn-ghost sm" style="margin:12px 0;cursor:pointer">
+      <input type="file" accept="image/*" class="hidden" onchange="uploadAva(event)">📷 ${t('pe_upload')}
+    </label>
+    <button class="btn btn-primary" onclick="saveProfile()">${t('pe_save')}</button>`;
+  renderAvaOpts();
+  $('payModal').classList.remove('hidden');
+}
+
+function renderAvaOpts() {
+  const imgOpt = peAvatar?.type === 'img'
+    ? `<button class="ava-opt active"><img src="${peAvatar.value}"></button>` : '';
+  $('avaOpts').innerHTML = imgOpt + AVA_EMOJIS.map(e => `
+    <button class="ava-opt ${peAvatar?.type === 'emoji' && peAvatar.value === e ? 'active' : ''}" onclick="chooseAva('${e}')">${e}</button>
+  `).join('');
+}
+function chooseAva(e) { haptic(); peAvatar = { type:'emoji', value:e }; renderAvaOpts(); }
+
+function uploadAva(ev) {
+  const file = ev.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { peAvatar = { type:'img', value: reader.result }; renderAvaOpts(); haptic('medium'); };
+  reader.readAsDataURL(file);
+}
+
+function saveProfile() {
+  haptic('medium');
+  const name = $('peName').value.trim();
+  if (name) state.profile.name = name;
+  state.profile.avatar = peAvatar;
+  save();
+  renderProfile();
+  closePay();
+  toast(t('pe_saved'));
+}
+
+function renderProfile() {
+  const name = state.profile.name || uNameDefault;
+  $('userName').textContent = name;
+  const av = state.profile.avatar;
+  if (av?.type === 'img') $('avatar').innerHTML = `<img src="${av.value}">`;
+  else if (av?.type === 'emoji') $('avatar').textContent = av.value;
+  else $('avatar').textContent = (name[0] || 'G').toUpperCase();
+}
+
+/* ================= ADMIN PANEL (только для ADMIN_TG_ID) ================= */
+const ADMIN_TG_ID = 1437839289;
+function isAdmin() { return state.isAdmin || userId === ADMIN_TG_ID; }
+
+function openAdmin() {
+  if (!isAdmin()) return;
+  haptic();
+  showScreen('admin');
+  loadAdmin();
+}
+
+/* демо-данные, чтобы посмотреть интерфейс без сервера */
+const ADMIN_MOCK = {
+  ok: true,
+  stats: { users: 2, songs: 1, uah: 150, stars: 100, wdCount: 1, wdSum: 75 },
+  withdrawals: [
+    { id: 2, user_id: 10000001, username: 'demo_user', amount: 75, method: 'crypto', network: 'TRC20', details: 'TQmusicDemoUsdtAddress123', created_at: '2026-07-05 12:00' },
+    { id: 1, user_id: 10000002, username: 'demo_two', amount: 120, method: 'card', network: null, details: '4441 1144 4111 1111', created_at: '2026-07-05 10:30' },
+  ],
+  wdHistory: [
+    { id: 0, user_id: 10000003, username: 'old_user', amount: 200, method: 'crypto', network: 'Solana', details: '7xKqDemoSolAddr', status: 'paid', created_at: '2026-07-01 09:00' },
+  ],
+  topRefs: [{ id: 10000001, username: 'demo_user', name: 'Demo', invited: 2, earned: 30 }],
+  topSpenders: [{ id: 10000001, username: 'demo_user', name: 'Demo', spent: 150 }],
+  recent: [{ id: 10000001, username: 'demo_user', name: 'Demo', credits: 1, money: 30, stars: 0 }],
+};
+
+async function loadAdmin() {
+  let d = SERVER ? await api('/api/admin/overview') : null;
+  if (!d?.ok) d = ADMIN_MOCK;
+  renderAdmin(d);
+}
+
+const admName = u => (u.username ? '@' + u.username : (u.name || '—'));
+const admRow = html =>
+  `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px">${html}</div>`;
+
+function renderAdmin(d) {
+  $('admStats').innerHTML = `
+    <div class="stat s-blue"><div class="v">${d.stats.users}</div><div class="k">пользователей</div></div>
+    <div class="stat"><div class="v">${d.stats.songs}</div><div class="k">песен создано</div></div>
+    <div class="stat s-green"><div class="v">${d.stats.uah}₴ · ⭐${d.stats.stars}</div><div class="k">выручка</div></div>
+    <div class="stat"><div class="v">${d.stats.wdCount} / ${d.stats.wdSum}₴</div><div class="k">заявки на вывод</div></div>`;
+
+  const wdMethod = w => w.method === 'crypto' ? `🪙 USDT · ${w.network || '?'}` : '💳 карта';
+  $('admWd').innerHTML = d.withdrawals.length ? d.withdrawals.map(w => `
+    <div class="card" style="margin-bottom:8px">
+      <div style="font-size:13px;line-height:1.7">
+        <b>#${w.id}</b> · <code>${w.user_id}</code> ${w.username ? '@' + w.username : ''}
+        <span style="color:var(--muted2);float:right">${(w.created_at || '').slice(0, 16)}</span><br>
+        <b style="color:var(--green);font-size:15px">${w.amount} грн</b> · ${wdMethod(w)}<br>
+        <span style="color:var(--muted);word-break:break-all;user-select:text;-webkit-user-select:text">${w.details || '—'}</span>
+      </div>
+      <button class="btn btn-primary sm" style="margin-top:10px" onclick="admWdPaid(${w.id})">✅ Выплачено</button>
+    </div>`).join('') : `<div class="card empty">Заявок нет</div>`;
+
+  $('admWdHist').innerHTML = (d.wdHistory || []).length ? d.wdHistory.map(w => admRow(
+    `<span>#${w.id} · <code>${w.user_id}</code> ${w.username ? '@' + w.username : ''}<br>
+      <span style="color:var(--muted);word-break:break-all">${wdMethod(w)} · ${w.details || '—'}</span></span>
+     <span style="text-align:right;flex:none"><b style="color:var(--green)">${w.amount}₴</b><br>
+      <span style="color:var(--muted2)">${w.status === 'paid' ? '✅' : '❌'} ${(w.created_at || '').slice(0, 10)}</span></span>`)).join('')
+    : `<div class="empty">Пусто</div>`;
+
+  $('admTopRefs').innerHTML = d.topRefs.length ? d.topRefs.map((u, i) => admRow(
+    `<span>${i + 1}. ${admName(u)} <span style="color:var(--muted2)">${u.id}</span></span>
+     <span>${u.invited} чел · <b style="color:var(--green)">${Math.round(u.earned)}₴</b></span>`)).join('')
+    : `<div class="empty">Пусто</div>`;
+
+  $('admTopSpend').innerHTML = d.topSpenders.length ? d.topSpenders.map((u, i) => admRow(
+    `<span>${i + 1}. ${admName(u)} <span style="color:var(--muted2)">${u.id}</span></span>
+     <b style="color:var(--amber)">${Math.round(u.spent)}₴</b>`)).join('')
+    : `<div class="empty">Пусто</div>`;
+
+  $('admRecent').innerHTML = d.recent.length ? d.recent.map(u => admRow(
+    `<span>${admName(u)} <span style="color:var(--muted2)">${u.id}</span></span>
+     <span>${u.credits} ген · ${Math.round(u.money)}₴ · ⭐${u.stars}</span>`)).join('')
+    : `<div class="empty">Пусто</div>`;
+}
+
+async function admSearch() {
+  haptic();
+  const q = $('admQ').value.trim();
+  if (!q) return;
+  const d = SERVER
+    ? await api('/api/admin/search', { q })
+    : { ok: true, user: ADMIN_MOCK.recent[0], spent: 150, songs: 1, ref: { invited: 2, buyers: 1, earned: 30 } };
+  if (!d?.ok || !d.user) { $('admUser').innerHTML = `<div class="empty">Не найден</div>`; return; }
+  const u = d.user;
+  $('admUser').innerHTML = `
+    <div style="font-size:13px;line-height:1.8;margin-top:12px">
+      <b>${u.name || ''}</b> ${u.username ? '@' + u.username : ''} · <code>${u.id}</code><br>
+      Кредиты: <b>${u.credits}</b> · Баланс: <b style="color:var(--green)">${Math.round(u.money)}₴</b> · ⭐${u.stars}<br>
+      Потратил: <b style="color:var(--amber)">${Math.round(d.spent)}₴</b> · Песен: ${d.songs}<br>
+      Рефералов: ${d.ref.invited} (купили: ${d.ref.buyers}, принёс: ${Math.round(d.ref.earned)}₴)
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <input id="admAmount" type="number" placeholder="кол-во" style="flex:1">
+      <button class="btn btn-ghost sm" style="width:auto;padding:10px 14px" onclick="admGive(${u.id},'credits')">+ген</button>
+      <button class="btn btn-ghost sm" style="width:auto;padding:10px 14px" onclick="admGive(${u.id},'money')">+грн</button>
+    </div>`;
+}
+
+async function admGive(id, field) {
+  const n = Number($('admAmount').value);
+  if (!n) { toast('Введите число'); return; }
+  haptic('medium');
+  if (!SERVER) { toast('Демо: нужен сервер'); return; }
+  const d = await api('/api/admin/give', { id, [field]: n });
+  if (d?.ok) { toast('Начислено ✅'); admSearch(); } else toast('Ошибка');
+}
+
+async function admWdPaid(id) {
+  haptic('medium');
+  if (!SERVER) { toast('Демо: нужен сервер'); return; }
+  const d = await api('/api/admin/wd_paid', { id });
+  if (d?.ok) { toast('Отмечено ✅'); loadAdmin(); } else toast('Ошибка');
+}
+
+/* ================= TOAST ================= */
+let toastTimer = null;
+function toast(msg) {
+  const box = $('toastBox');
+  box.textContent = msg;
+  box.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => box.classList.add('hidden'), 2600);
+}
+
+/* ================= INIT ================= */
+load();
+
+document.querySelectorAll('#langSwitch button').forEach(b =>
+  b.addEventListener('click', () => { haptic(); state.lang = b.dataset.lang; applyLang(); save(); }));
+document.querySelectorAll('#vocalSeg button').forEach(b =>
+  b.addEventListener('click', () => setVocal(b.dataset.vocal)));
+document.querySelectorAll('#lyricsTabs button').forEach(b =>
+  b.addEventListener('click', () => setTab(b.dataset.tab)));
+document.querySelectorAll('#themeSeg button').forEach(b =>
+  b.addEventListener('click', () => { haptic(); state.theme = b.dataset.theme; applyTheme(); save(); }));
+
+// profile identity
+const uNameDefault = tgUser ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') : 'Guest';
+$('userTag').textContent = tgUser?.username ? '@' + tgUser.username : 'id' + userId;
+$('refLink').textContent = getRefLink().replace('https://', '');
+renderProfile();
+$('adminBtn').classList.toggle('hidden', !isAdmin());
+
+applyAccent();
+applyTheme();
+applyLang();
+setVocal('male');
+setTab('self');
+showScreen('create');
+serverSync();   // подтягиваем реальные балансы/песни с сервера, если он есть
+</script>
+</body>
+</html>
